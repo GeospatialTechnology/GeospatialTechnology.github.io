@@ -1,16 +1,16 @@
 # Configurations
-title:            Jekyll Gitbook
-longtitle:        Jekyll Gitbook
-author:           HE Tao
-email:            sighingnow@gmail.com
+title:            Documentación
+longtitle:        GT Documentación de desarrollo
+author:           Gastón Quelali
+email:            gaston.quelali@geotec-srl.com
 description: >
-  Build Jekyll site with the GitBook style.
+  Documentación de desarrollo de la empresa GEOTEC S.R.L.
 
 version:          1.0
 gitbook_version:  3.2.3
 
-url:              'https://sighingnow.github.io'
-baseurl:          '/jekyll-gitbook'
+url:              'https://geospatialtechnology.github.io/'
+baseurl:          ''
 rss:              RSS
 
 # bootstrap: use the remote theme for the site itself
