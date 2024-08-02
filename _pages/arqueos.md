@@ -122,6 +122,10 @@ contactos = pd.read_excel('/content/drive/MyDrive/PathDocumento', sheet_name='Cl
 En siguiente código es para dar el formato correcto a columnas que tengan fechas, además de quitar formato RTF y posteriormente exportar el nuevo CSV:
 
 ```markdown
+import numpy as np
+!pip install striprtf
+from striprtf.striprtf import rtf_to_text
+
 # Formato correcto fechas
 clientes['DATA'] = pd.to_datetime(clientes['DATA'], errors='coerce')
 clientes['DATA'] = clientes['DATA'].dt.strftime('%Y-%m-%d')
