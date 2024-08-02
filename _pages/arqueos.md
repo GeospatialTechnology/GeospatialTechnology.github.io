@@ -4,6 +4,7 @@ author: Andres Rocabado
 date: 2024-08-02
 category: LKS
 layout: post
+mermaid: true
 ---
 
 Productos, fabricantes y categorías
@@ -30,7 +31,6 @@ drive.mount('/content/drive')
 categorias = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 fabricantes = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 productos = pd.read_excel('/content/drive/MyDrive/PathDocumento')
-
 ```
 
 # Dar formato a columnas
@@ -62,7 +62,7 @@ Se agregaron nuevas columnas de modo que los "Id" antíguos de las categorías y
 # Crear un diccionario de código de fabricante y su índice de fila en el archivo de fabricantes
 fabricantes_dict = fabricantes.reset_index().set_index('COD_FABRICANTE')['index'].add(1).to_dict()
 
-# # Crear una nueva columna en el dataframe de productos
+# Crear una nueva columna en el dataframe de productos
 productos['INDICE_FABRICANTE'] = productos['FABRICANTE'].map(lambda x: fabricantes_dict.get(x, None)).astype(pd.Int64Dtype())
 
 # Crear un diccionario de código de categoria y su índice de fila en el archivo de categorias
@@ -73,7 +73,6 @@ productos['INDICE_CATEGORIA'] = productos['GRUPO'].map(lambda x: categorias_dict
 
 # Exportado de nuevo CSV
 productos.to_csv('/content/drive/MyDrive/"PathExportacion".csv', index=False)
-
 ```
 
 Proveedores
