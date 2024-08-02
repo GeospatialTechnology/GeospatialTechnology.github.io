@@ -7,21 +7,17 @@ layout: post
 mermaid: true
 ---
 
+## Tratamiento de datos
+El tratamiento de datos se realizó mediante la herramienta de [Google Colaboratory](https://colab.research.google.com/).
+
 Productos, fabricantes y categorías
-
-# Documentos usados
-
+-------------
+### Documentos usados
 Los documentos usados para realizar estas migraciones fueron:
-
 - [Excel fabricantes](../assets/documents/PROD_FABRICANTE.xlsx)
 - [Excel categorías](../assets//documents/PROD_CATEGORIAS.xlsx)
 - [Excel productos](../assets/documents/PRODUCTOS.xlsx)
-
-
-# Tratamiento de datos
-El tratamiento de datos se realizó mediante la herramienta de [Google Colaboratory](https://colab.research.google.com/), a continuación se detallaran los pasos que se realizaron para ello.
-
-# Cargado de dataframes
+### Cargado de dataframes
 Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
 ```markdown
 import pandas as pd
@@ -32,8 +28,7 @@ categorias = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 fabricantes = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 productos = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 ```
-
-# Dar formato a columnas
+### Dar formato a columnas
 En siguiente código es para dar el formato correcto a columnas que toman "." por ",":
 ```markdown
 # Función para reemplazar puntos por comas
@@ -55,7 +50,7 @@ productos['VLR_VENDA'] = productos['VLR_VENDA'].apply(replace_dot_with_comma)
 productos['VLR_VENDA2'] = productos['VLR_VENDA2'].apply(replace_dot_with_comma)
 productos['VLR_VENDA3'] = productos['VLR_VENDA3'].apply(replace_dot_with_comma)
 ```
-# Agregado de nuevas columnas
+### Agregado de nuevas columnas
 Se agregaron nuevas columnas de modo que los "Id" antíguos de las categorías y fabricantes conincidan con los nuevos "Id" que se crearán en el ERP y posteriormente se exportó en nuevo documento a un CSV, esto se realizó de la siguiente manera:
 
 ```markdown
@@ -76,9 +71,69 @@ productos.to_csv('/content/drive/MyDrive/"PathExportacion".csv', index=False)
 ```
 
 Proveedores
+-------------
+### Documentos usados
+Los documentos usados para realizar estas migraciones fueron:
+- [Excel contactos](../assets/documents/CONTACTOS.xlsx)
+### Cargado de dataframes
+Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
+```markdown
+import pandas as pd
+from google.colab import drive
+drive.mount('/content/drive')
 
-migraciones para proveedores
+contactos = pd.read_excel('/content/drive/MyDrive/PathDocumento', sheet_name='proveedor')
+```
+### Dar formato a columnas
+En siguiente código es para dar el formato correcto a columnas que tengan fechas y posteriormente exportar el nuevo excel:
+```markdown
+# Formato correcto fechas
+proveedores['Data_Cadastro'] = pd.to_datetime(proveedores['Data_Cadastro'], errors='coerce')
+proveedores['Data_Cadastro'] = proveedores['Data_Cadastro'].dt.strftime('%Y-%m-%d')
+
+# Guardar excel de proveedores
+proveedores.to_excel('/content/drive/MyDrive/"PathExportacion".xlsx', index=False)
+```
 
 Clientes
+-------------
+### Documentos usados
+Los documentos usados para realizar estas migraciones fueron:
+- [Excel contactos](../assets/documents/CONTACTOS.xlsx)
+### Cargado de dataframes
+Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
+```markdown
+import pandas as pd
+from google.colab import drive
+drive.mount('/content/drive')
 
-migraciones para clientes
+contactos = pd.read_excel('/content/drive/MyDrive/PathDocumento', sheet_name='Cliente')
+```
+### Dar formato a columnas
+En siguiente código es para dar el formato correcto a columnas que tengan fechas, además de quitar formato RTF y posteriormente exportar el nuevo CSV:
+```markdown
+# Formato correcto fechas
+clientes['DATA'] = pd.to_datetime(clientes['DATA'], errors='coerce')
+clientes['DATA'] = clientes['DATA'].dt.strftime('%Y-%m-%d')
+
+# Función segura para convertir RTF a texto y manejar valores NaN o vacíos
+def safe_rtf_to_text(rtf_text):
+    if pd.isna(rtf_text):
+        return None
+    elif isinstance(rtf_text, str):
+        try:
+            text = rtf_to_text(rtf_text)
+            if text.strip() == "":  # Si el texto convertido es una cadena vacía, retorna None
+                return None
+            return text
+        except Exception as e:
+            # Si la conversión falla, retornar el texto original
+            return rtf_text
+    else:
+        return rtf_text
+
+clientes['OBS'] = clientes['OBS'].apply(safe_rtf_to_text)
+
+# Guardar excel de clientes
+clientes.to_csv('/content/drive/MyDrive/GeoTec/"PathExportacion".csv', index=False)
+```
