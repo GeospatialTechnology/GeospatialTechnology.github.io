@@ -17,8 +17,10 @@ Los documentos usados para realizar estas migraciones fueron:
 - [Excel fabricantes](../assets/documents/PROD_FABRICANTE.xlsx)
 - [Excel categorías](../assets//documents/PROD_CATEGORIAS.xlsx)
 - [Excel productos](../assets/documents/PRODUCTOS.xlsx)
+
 ### Cargado de dataframes
 Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
+
 ```markdown
 import pandas as pd
 from google.colab import drive
@@ -28,8 +30,10 @@ categorias = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 fabricantes = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 productos = pd.read_excel('/content/drive/MyDrive/PathDocumento')
 ```
+
 ### Dar formato a columnas
 En siguiente código es para dar el formato correcto a columnas que toman "." por ",":
+
 ```markdown
 # Función para reemplazar puntos por comas
 def replace_dot_with_comma(x):
@@ -50,6 +54,7 @@ productos['VLR_VENDA'] = productos['VLR_VENDA'].apply(replace_dot_with_comma)
 productos['VLR_VENDA2'] = productos['VLR_VENDA2'].apply(replace_dot_with_comma)
 productos['VLR_VENDA3'] = productos['VLR_VENDA3'].apply(replace_dot_with_comma)
 ```
+
 ### Agregado de nuevas columnas
 Se agregaron nuevas columnas de modo que los "Id" antíguos de las categorías y fabricantes conincidan con los nuevos "Id" que se crearán en el ERP y posteriormente se exportó en nuevo documento a un CSV, esto se realizó de la siguiente manera:
 
@@ -77,6 +82,7 @@ Los documentos usados para realizar estas migraciones fueron:
 - [Excel contactos](../assets/documents/CONTACTOS.xlsx)
 ### Cargado de dataframes
 Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
+
 ```markdown
 import pandas as pd
 from google.colab import drive
@@ -86,6 +92,7 @@ contactos = pd.read_excel('/content/drive/MyDrive/PathDocumento', sheet_name='pr
 ```
 ### Dar formato a columnas
 En siguiente código es para dar el formato correcto a columnas que tengan fechas y posteriormente exportar el nuevo excel:
+
 ```markdown
 # Formato correcto fechas
 proveedores['Data_Cadastro'] = pd.to_datetime(proveedores['Data_Cadastro'], errors='coerce')
@@ -102,6 +109,7 @@ Los documentos usados para realizar estas migraciones fueron:
 - [Excel contactos](../assets/documents/CONTACTOS.xlsx)
 ### Cargado de dataframes
 Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
+
 ```markdown
 import pandas as pd
 from google.colab import drive
@@ -109,8 +117,10 @@ drive.mount('/content/drive')
 
 contactos = pd.read_excel('/content/drive/MyDrive/PathDocumento', sheet_name='Cliente')
 ```
+
 ### Dar formato a columnas
 En siguiente código es para dar el formato correcto a columnas que tengan fechas, además de quitar formato RTF y posteriormente exportar el nuevo CSV:
+
 ```markdown
 # Formato correcto fechas
 clientes['DATA'] = pd.to_datetime(clientes['DATA'], errors='coerce')
