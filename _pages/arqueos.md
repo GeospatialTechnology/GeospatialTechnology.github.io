@@ -460,3 +460,261 @@ detalles_ventas_validas['ID_PRODUCT_ERP'] = detalles_ventas_validas['PRODUCT_ID'
 
 detalles_ventas_validas.to_csv('/content/drive/MyDrive/PathDocumento', index=False)
 ```
+
+## Ventas con transferencias
+
+### Documentos usados
+
+Los documentos usados para realizar estas migraciones fueron:
+
+- [Excel ventas](https://geospatialtechnology.github.io/assets/documents/VENTAS.xlsx)
+- [Excel ventas detalles](https://geospatialtechnology.github.io/assets/documents/VENTAS_DETALLES.xlsx)
+
+### Cargado de dataframes
+
+Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, los documentos que se usaron para las transferencias y las ventas son los mismos, ya que el sistema Ambar no contaba con un módulo para hacer transferencias entre almacenes, es por ello que las transferencias se realizaban como ventas entre almacenes, esto se realizó de la siguiente manera:
+
+```markdown
+import pandas as pd
+from google.colab import drive
+drive.mount('/content/drive')
+
+ventas = pd.read_excel('/content/drive/MyDrive/PathDocumento/VENTAS.xlsx')
+ventas_detalles = pd.read_excel('/content/drive/MyDrive/PathDocumento/VENTAS_DETALLES.xlsx')
+```
+
+### Obtener productos y clientes válidos
+
+Se guardó en variables tanto los productos como los clientes que se tomaron en cuenta en el ERP, esto se realizó de la siguiente manera:
+
+```markdown
+# Productos válidos
+
+producto_con_codigo = productos[~productos['COD_INTERNO'].isna() & (productos['COD_INTERNO'].str.strip() != "")]
+
+# Clientes válidos
+
+clientes = pd.read_excel('/content/drive/MyDrive/PathDocumento/CONTACTOS.xlsx', sheet_name='Cliente')
+```
+
+### Dar formato a columnas
+
+En siguiente código es para dar el formato correcto a columnas para las transferencias, esto se hizo de la siguiente manera:
+
+```markdown
+# Dar formato a columna de "Id" del producto de excel VENTAS_DETALLES
+
+ventas_detalles['PRODUCT_ID'] = pd.to_numeric(ventas_detalles['PRODUCT_ID'], errors='coerce').astype(pd.Int64Dtype())
+
+# Dar formato a VLR_UNIT, VLR_TOTAL de excel VENTAS_DETALLES
+
+# Función para reemplazar puntos por comas
+
+def replace_dot_with_comma(x):
+if pd.isna(x):
+return x
+elif isinstance(x, float):
+return str(x).replace('.', ',')
+elif isinstance(x, str):
+return x
+else:
+return x
+
+ventas_detalles['VLR_UNIT'] = ventas_detalles['VLR_UNIT'].apply(replace_dot_with_comma)
+ventas_detalles['VLR_TOTAL'] = ventas_detalles['VLR_TOTAL'].apply(replace_dot_with_comma)
+
+# Dar formato a QUANT de excel VENTAS_DETALLES
+
+# Convertimos a numérico, asegurándonos de que no haya errores
+
+ventas_detalles['QUANT'] = pd.to_numeric(ventas_detalles['QUANT'], errors='coerce')
+
+# Tomamos solo la parte entera de los valores, incluso si son floats
+
+ventas_detalles['QUANT'] = ventas_detalles['QUANT'].fillna(0).astype(int)
+
+# Dar formato a TOTAL_PAGO, TOTAL_PEDIDO, TOTAL_PRODUCTOS de excel VENTAS
+
+# Función para reemplazar puntos por comas
+
+def replace_dot_with_comma(x):
+if pd.isna(x):
+return x
+elif isinstance(x, float):
+return str(x).replace('.', ',')
+elif isinstance(x, str):
+return x
+else:
+return x
+
+ventas['TOTAL_PAGO'] = ventas['TOTAL_PAGO'].apply(replace_dot_with_comma)
+ventas['TOTAL_PEDIDO'] = ventas['TOTAL_PEDIDO'].apply(replace_dot_with_comma)
+ventas['TOTAL_PRODUTOS'] = ventas['TOTAL_PRODUTOS'].apply(replace_dot_with_comma)
+
+# Dar formato a columna de OBS de excel VENTAS
+
+# Reemplazar secuencias de caracteres especiales con cadenas vacías y eliminar espacios en blanco
+
+ventas['OBS'] = ventas['OBS'].str.replace('_x000d_', '', regex=False).str.replace('\n', '', regex=False).str.strip()
+```
+
+### Análisis de datos
+
+En siguiente código es para filtrar los datos que se tomaran en cuenta en el ERP, esto se hizo de la siguiente manera:
+
+```markdown
+# Ventas que SI tienen cliente
+
+filtro = ventas['COD_CLIENTE'].isin(clientes['COD_CLIENTE'])
+ventas_con_clientes = ventas[filtro]
+
+# Ventas que tienen cliente, son sin factura, no estan canceladas y no son de transferencia
+
+filtro = (
+(ventas_con_clientes['TVENDA'] != '1') &
+(~ventas_con_clientes['TVENDA'].isna()) &
+(ventas_con_clientes['POSICAO'] != 'CANCELADO') &
+(~ventas_con_clientes['NOME'].isin(['L.K.S. 1 COMPRAS 1', 'L.K.S 2 COMPRAS 2', 'DEPOSITO 5º ANILLO']))
+)
+ventas_con_clientes_sin_factura_sin_cancelados_sin_transferencia = ventas_con_clientes[filtro]
+
+# Detalles de ventas que si tienen venta y si pertenecen a la misma empresa
+
+# Primero, creamos un filtro booleano para seleccionar los 'PEDIDO' y 'EMPRESA' que existen en ventas_con_clientes_sin_factura_sin_cancelados_sin_transferencia
+
+ventas_pedido_empresa_dict = ventas_con_clientes_sin_factura_sin_cancelados_sin_transferencia.set_index(['PEDIDO', 'EMPRESA']).index
+
+# Luego, filtramos detalles_ventas para que solo queden los pedidos y empresas que están en pedidos_validos
+
+detalles_ventas_con_venta_con_empresa = ventas_detalles[ventas_detalles.set_index(['PEDIDO', 'EMPRESA']).index.isin(ventas_pedido_empresa_dict)]
+
+# Detalles de ventas que tienen venta, tienen empresa y si tienen productos
+
+filtro = detalles_ventas_con_venta_con_empresa['PRODUCT_ID'].isin(producto_con_codigo['CODID'])
+
+detalles_ventas_con_venta_con_empresa_con_productos = detalles_ventas_con_venta_con_empresa[filtro]
+
+# Ventas que si tienen clientes, son sin factura, no son canceladas, no son transferencias y si tienen detalle de venta, ademas quitar el ultimo dato ya que la fecha es de 1880
+
+detalles_ventas_pedido_empresa_dict = detalles_ventas_con_venta_con_empresa_con_productos.set_index(['PEDIDO', 'EMPRESA']).index
+ventas_validas = ventas_con_clientes_sin_factura_sin_cancelados_sin_transferencia[
+ventas_con_clientes_sin_factura_sin_cancelados_sin_transferencia.set_index(['PEDIDO', 'EMPRESA']).index.isin(detalles_ventas_pedido_empresa_dict)
+]
+
+ventas_validas = ventas_validas.iloc[:-1]
+
+# Detalles de venta que tienen venta y productos
+
+ventas_pedido_empresa_dict = ventas_validas.set_index(['PEDIDO', 'EMPRESA']).index
+detalles_ventas_validas = detalles_ventas_con_venta_con_empresa_con_productos[
+detalles_ventas_con_venta_con_empresa_con_productos.set_index(['PEDIDO', 'EMPRESA']).index.isin(ventas_pedido_empresa_dict)
+]
+
+# Crear columna en VENTAS_DETALLES con los indices de la ventas que se encuentran en el excel de VENTAS
+
+inicio = 42361 + len(ventas_validas)
+
+# Crear una nueva columna en 'ventas'
+
+ventas_validas['ID_TRANSFERENCIA'] = range(inicio, inicio - len(ventas_validas), -1)
+
+# Crear un diccionario de 'PEDIDO','EMPRESA' a 'NUEVO_INDICE'
+
+pedido_a_transferencia = ventas_validas.set_index(['PEDIDO','EMPRESA'])['ID_TRANSFERENCIA'].to_dict()
+
+# Asignar la columna 'NUEVO_INDICE' a 'detalles_ventas_validas' usando el diccionario
+
+detalles_ventas_validas['ID_TRANSFERENCIA'] = detalles_ventas_validas.set_index(['PEDIDO','EMPRESA']).index.map(pedido_a_transferencia)
+
+# Crear una nueva columna en 'ventas' con el índice +1 usando len
+
+ventas_validas['NUEVO_INDICE'] = range(len(ventas_validas), 0, -1)
+
+# Crear un diccionario de 'PEDIDO','EMPRESA' a 'NUEVO_INDICE'
+
+pedido_a_indice = ventas_validas.set_index(['PEDIDO','EMPRESA'])['NUEVO_INDICE'].to_dict()
+
+# Asignar la columna 'NUEVO_INDICE' a 'detalles_ventas_validas' usando el diccionario
+
+detalles_ventas_validas['ID_VENTA'] = detalles_ventas_validas.set_index(['PEDIDO','EMPRESA']).index.map(pedido_a_indice)
+
+# Dar formato a fecha de excel VENTAS
+
+def convert_dates(date_str): # Convierte la cadena de fecha usando el primer formato
+dates_format1 = pd.to_datetime(date_str, errors='coerce')
+
+    # Convierte la cadena de fecha usando el segundo formato
+    dates_format2 = pd.to_datetime(date_str, format='%Y-%m-%d %H:%M:%S.%f', errors='coerce')
+
+    # Determina cuál de los dos formatos no resultó en NaT
+    if pd.isna(dates_format1) and not pd.isna(dates_format2):
+        return dates_format2
+    elif not pd.isna(dates_format1):
+        return dates_format1
+    else:
+        return pd.NaT
+
+# Uso de la función
+
+ventas_validas['DATA'] = ventas_validas['DATA'].apply(convert_dates)
+
+# Dar formato a fecha entrega de excel VENTAS
+
+ventas_validas['DT_ENTREGA'] = pd.to_datetime(ventas_validas['DT_ENTREGA'], errors='coerce')
+
+# Crear columna en VENTAS con los vendedores que se encuentrarn en el ERP
+
+def asignar_vendedor_erp(vendedor):
+if vendedor == "JUAN":
+return "Juan Torrico"
+elif vendedor in ["RENNY", "RENNI"]:
+return "Renny Soto"
+elif vendedor == "ERVIN PUMA":
+return "Edwin Puma"
+elif vendedor == "JESUS":
+return "Jesus Cruz"
+elif vendedor == "SOUZA":
+return "Grover Souza"
+elif vendedor == "CARLOS":
+return "Carlos Saraiva"
+elif vendedor == "LUIS":
+return "Luis Cruz"
+elif vendedor == "ZEBALLOS":
+return "Juliane Zeballos"
+elif vendedor == "MERCEDES":
+return "Mercedes Farell"
+else:
+return None
+
+# Aplicar la función a la columna 'VENDEDOR' para crear la nueva columna 'VENDEDORES_ERP'
+
+ventas_validas['VENDEDORES_ERP'] = ventas_validas['VENDEDOR'].apply(asignar_vendedor_erp)
+
+# Crear columna en VENTAS con los clientes que se encuentran en el ERP
+
+# Crear un diccionario de código de cliente y su índice de fila en el archivo de clientes
+
+clientes_dict = clientes.reset_index().set_index('COD_CLIENTE')['index'].add(19).to_dict()
+
+# Crear una nueva columna en el dataframe de ventas
+
+ventas_validas['INDICE_CLIENTE'] = ventas_validas['COD_CLIENTE'].map(lambda x: clientes_dict.get(x, None)).astype(pd.Int64Dtype())
+
+# Guardar el dataframe de productos con la nueva columna
+
+ventas_validas.to_csv('/content/drive/MyDrive/PathDocumento/VENTAS.csv', index=False)
+
+# Crear columna en VENTAS_DETALLES con los productos que se encuentran en el ERP
+
+# Crear un diccionario de código de producto y su índice de fila en el archivo de productos
+
+productos_dict = {producto_con_codigo['CODID'].iloc[i]: i + 1 for i in range(len(producto_con_codigo))}
+
+# Crear una nueva columna en el dataframe de ventas
+
+detalles_ventas_validas['ID_PRODUCT_ERP'] = detalles_ventas_validas['PRODUCT_ID'].map(lambda x: productos_dict.get(x, None)).astype(pd.Int64Dtype())
+
+# Guardar el dataframe de venta detalles con la nueva columna
+
+detalles_ventas_validas.to_csv('/content/drive/MyDrive/GeoTec/VENTAS/VENTAS_DETALLES.csv', index=False)
+```
