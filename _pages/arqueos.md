@@ -14,9 +14,12 @@ Productos, fabricantes y categorías
 -------------
 ### Documentos usados
 Los documentos usados para realizar estas migraciones fueron:
-- [Excel fabricantes](../assets/documents/PROD_FABRICANTE.xlsx)
-- [Excel categorías](../assets//documents/PROD_CATEGORIAS.xlsx)
-- [Excel productos](../assets/documents/PRODUCTOS.xlsx)
+- <a href="../assets/documents/PROD_FABRICANTE.xlsx" download>Excel fabricantes</a>
+- [Excel categorías productos](../assets//documents/PROD_CATEGORIAS.xlsx){:download}
+- [Excel embalages productos](../assets/documents/PROD_EMBALAGE.xlsx){:download}
+- [Excel fabricantes productos](../assets/documents/PROD_FABRICANTE.xlsx){:download}
+- [Excel stocks productos](../assets/documents/PROD_STOCKS.xlsx){:download}
+- [Excel productos](../assets/documents/PRODUCTOS.xlsx){:download}
 
 ### Cargado de dataframes
 Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
@@ -79,7 +82,7 @@ Proveedores
 -------------
 ### Documentos usados
 Los documentos usados para realizar estas migraciones fueron:
-- [Excel contactos](../assets/documents/CONTACTOS.xlsx)
+- [Excel contactos](../assets/documents/CONTACTOS.xlsx){:download}
 ### Cargado de dataframes
 Los documentos se subieron a una carpeta en google drive de modo que se pueda acceder a ellos mediante google colab, para el manejo de datos se usó pandas, esto se realizó de la siguiente manera:
 
